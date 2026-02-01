@@ -460,6 +460,7 @@ export default function App() {
                 <h2 className="text-base font-bold" style={{ color: THEME.darkOlive }}>{getTabName('dashboard', '旅程儀表')}</h2>
             </div>
             
+            {/* 🌟 Highlight Moved to Header Right (Break Words + Text SM) */}
             {currentSummary.Highlight && (
                <div className="flex-1 flex items-center justify-end gap-1.5 ml-3">
                   <Star size={12} className="text-orange-500 fill-orange-500 flex-shrink-0"/>
@@ -524,21 +525,28 @@ export default function App() {
           >
             
             {/* HEADER: Date Selector (Redesigned) */}
-            {/* 🔥 FIX 2: Absolute Arrows, Center Date/Day/Icon */}
-            <div className="relative w-full flex items-center justify-center mb-6 h-10">
-                <button disabled={dayIndex === 0} onClick={() => setDayIndex(prev => Math.max(0, prev - 1))} className="absolute left-0 p-2 rounded-full bg-stone-100 disabled:opacity-30"><ChevronLeft color={THEME.darkOlive}/></button>
+            {/* 🔥 FIX 2: Absolute Arrows, Center Date/Day, Button to RIGHT of Date */}
+            <div className="relative w-full flex items-center justify-center pt-6 mb-6">
+                <button disabled={dayIndex === 0} onClick={() => setDayIndex(prev => Math.max(0, prev - 1))} className="absolute left-0 p-2 rounded-full bg-stone-100 disabled:opacity-30 z-10"><ChevronLeft color={THEME.darkOlive}/></button>
                 
-                <div className="flex items-center gap-2">
+                {/* Center Group: Flex container to hold [Ghost] [Date] [Button] for perfect center */}
+                <div className="flex items-center gap-3">
+                    {/* 1. Ghost Spacer (Same width as button) to force date to true center */}
+                    <div className="w-10 h-10 opacity-0 pointer-events-none"></div>
+
+                    {/* 2. Date Content (True Center) */}
                     <button onClick={() => jumpToItineraryDay(currentSummary.Day)} className="text-center group active:scale-95 transition-transform flex flex-col items-center leading-none">
                         <h2 className="text-2xl font-black tracking-wide" style={{ color: THEME.darkOlive }}>{currentSummary.Date || 'Loading...'}</h2>
                         <span className="text-xs font-bold px-3 py-0.5 rounded-full uppercase tracking-widest inline-flex items-center gap-1 mt-1" style={{ backgroundColor: THEME.beige, color: THEME.darkOlive }}>
                         Day {currentSummary.Day || '-'} 
                         </span>
                     </button>
-                    <button onClick={() => setShowDaySelector(true)} className="p-2 rounded-full bg-stone-100 hover:bg-stone-200 active:scale-95 transition-all"><Calendar size={18} color={THEME.olive} /></button>
+
+                    {/* 3. Calendar Button (Right of Date) */}
+                    <button onClick={() => setShowDaySelector(true)} className="w-10 h-10 flex items-center justify-center rounded-full bg-stone-100 hover:bg-stone-200 active:scale-95 transition-all"><Calendar size={18} color={THEME.olive} /></button>
                 </div>
 
-                <button disabled={dayIndex >= data.summary.length - 1} onClick={() => setDayIndex(prev => Math.min(data.summary.length - 1, prev + 1))} className="absolute right-0 p-2 rounded-full bg-stone-100 disabled:opacity-30"><ChevronRight color={THEME.darkOlive}/></button>
+                <button disabled={dayIndex >= data.summary.length - 1} onClick={() => setDayIndex(prev => Math.min(data.summary.length - 1, prev + 1))} className="absolute right-0 p-2 rounded-full bg-stone-100 disabled:opacity-30 z-10"><ChevronRight color={THEME.darkOlive}/></button>
             </div>
 
             {/* 🎫 Quick Wallet */}
@@ -561,8 +569,8 @@ export default function App() {
                     <div className="p-2 bg-white rounded-full">{getWeatherIcon(currentWeather?.code)}</div>
                     <div>
                         <p className="text-xs font-bold uppercase opacity-60" style={{ color: THEME.darkOlive }}>{currentSummary['Weather City']}</p>
-                        {/* 🔥 FIX 1: WEATHER FONT REVERTED (text-xs) */}
-                        {currentWeather ? <p className="font-bold text-xs whitespace-nowrap" style={{ color: THEME.darkOlive }}>🔺{currentWeather.max}° 🔻{currentWeather.min}°</p> : <p className="font-bold text-sm" style={{ color: THEME.darkOlive }}>Loading...</p>}
+                        {/* 🔥 FIX 1: WEATHER FONT REVERTED (text-sm) */}
+                        {currentWeather ? <p className="font-black text-sm whitespace-nowrap" style={{ color: THEME.darkOlive }}>🔺{currentWeather.max}° 🔻{currentWeather.min}°</p> : <p className="font-bold text-sm" style={{ color: THEME.darkOlive }}>Loading...</p>}
                     </div>
                   </div>
                   <div className="rounded-2xl p-4 border flex items-center gap-3 shadow-sm" style={{ backgroundColor: THEME.bg, borderColor: THEME.beige }}>
