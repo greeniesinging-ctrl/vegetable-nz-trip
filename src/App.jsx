@@ -267,7 +267,7 @@ const TextZoomModal = ({ isOpen, content, onClose, title }) => {
     <div className="fixed inset-0 z-[10000] flex items-center justify-center p-6 bg-stone-900/60 backdrop-blur-md">
       <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="bg-[#F9F7F2] w-full max-w-lg max-h-[80vh] rounded-3xl shadow-2xl overflow-hidden relative flex flex-col">
         <div className="px-6 py-4 border-b border-stone-200 flex justify-between items-center bg-white/50"><h3 className="font-bold text-lg" style={{ color: THEME.olive }}>{title}</h3></div>
-        <div className="p-8 overflow-y-auto"><p className="text-2xl leading-loose font-bold whitespace-pre-line" style={{ color: THEME.darkOlive }}>{content}</p></div>
+        <div className="p-8 overflow-y-auto"><p className="text-lg leading-loose font-bold whitespace-pre-line" style={{ color: THEME.darkOlive }}>{content}</p></div>
         <button onClick={onClose} className="absolute top-3 right-3 p-2 rounded-full bg-white/30 backdrop-blur-md border border-white/50 shadow-sm"><X size={28} color={THEME.darkOlive} /></button>
       </motion.div>
     </div>
@@ -325,6 +325,9 @@ export default function App() {
   const [expenseWarning, setExpenseWarning] = useState(false);
   const [showDaySelector, setShowDaySelector] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false); // New state for BottomSheet
+  
+  // 🔥 NEW: Refs for Touch Handling
+  const touchStartRef = useRef(0);
 
   const tripStatus = getTripStatus();
 
@@ -453,17 +456,18 @@ export default function App() {
     return (
       <div className="h-screen w-full flex flex-col relative overflow-hidden font-sans pb-16" style={{ backgroundColor: THEME.bg }}>
         
-        {/* 🔥 STANDARD HEADER (FIXED TOP, LEFT ALIGNED) */}
-        <header className="absolute top-0 left-0 right-0 z-[2000] bg-white/90 backdrop-blur-md border-b px-6 py-2 flex flex-col justify-center items-start shadow-sm h-auto min-h-[60px]" style={{ borderColor: THEME.beige }}>
-            <div className="flex items-center gap-2">
+        {/* 🔥 STANDARD HEADER (FIXED TOP, LEFT ALIGNED + RIGHT HIGHLIGHT) */}
+        <header className="absolute top-0 left-0 right-0 z-[2000] bg-white/90 backdrop-blur-md border-b px-6 py-3 flex items-center justify-between shadow-sm h-14" style={{ borderColor: THEME.beige }}>
+            <div className="flex items-center gap-2 flex-shrink-0">
                 <MapIcon size={20} className="" color={THEME.darkOlive}/>
                 <h2 className="text-base font-bold" style={{ color: THEME.darkOlive }}>{getTabName('dashboard', '旅程儀表')}</h2>
             </div>
-            {/* 🌟 Highlight Moved Inside Header */}
+            
+            {/* 🌟 Highlight Moved to Header Right (Break Words) */}
             {currentSummary.Highlight && (
-               <div className="flex items-center gap-1.5 mt-1 ml-0.5">
-                  <Star size={12} className="text-orange-500 fill-orange-500"/>
-                  <span className="text-xs font-bold text-orange-600 truncate max-w-[280px]">{currentSummary.Highlight}</span>
+               <div className="flex-1 flex items-center justify-end gap-1.5 ml-3">
+                  <Star size={12} className="text-orange-500 fill-orange-500 flex-shrink-0"/>
+                  <span className="text-xs font-bold text-orange-600 text-right break-words leading-tight">{currentSummary.Highlight}</span>
                </div>
             )}
         </header>
@@ -472,7 +476,7 @@ export default function App() {
         <div 
             className={`w-full relative z-0 transition-all duration-500 ease-in-out ${isExpanded ? 'h-[15%]' : 'h-[45%]'}`} 
         >
-          <div className="w-full h-full pt-16"> {/* Add padding for fixed header */}
+          <div className="w-full h-full pt-14"> {/* Add padding for fixed header */}
             <MapContainer center={mapCenter} zoom={6} className="w-full h-full" zoomControl={false}>
                 <TileLayer url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png" attribution='© OpenStreetMap' />
                 <MapUpdater center={mapCenter} />
@@ -491,6 +495,18 @@ export default function App() {
         {/* INFO SHEET (Dynamic Height) */}
         <div 
             className={`bg-white rounded-t-[2rem] relative z-10 shadow-[0_-5px_20px_rgba(0,0,0,0.1)] flex flex-col transition-all duration-500 ease-in-out ${isExpanded ? 'h-[85%] -mt-0' : 'h-[55%] -mt-6'}`}
+            // 🔥 Touch Swipe Logic
+            onTouchStart={(e) => { touchStartRef.current = e.touches[0].clientY; }}
+            onTouchEnd={(e) => {
+                const touchEnd = e.changedTouches[0].clientY;
+                const container = e.currentTarget.querySelector('.scroll-container'); // Get scrollable area
+                const isAtTop = container ? container.scrollTop === 0 : true;
+                
+                // Swipe Down Logic (Collapse)
+                if (touchEnd - touchStartRef.current > 50 && isAtTop && isExpanded) {
+                    setIsExpanded(false);
+                }
+            }}
         >
           {/* Drag Handle */}
           <div 
@@ -501,15 +517,9 @@ export default function App() {
           </div>
 
           <div 
-            className="flex-1 overflow-y-auto px-6 pb-4" 
+            className="scroll-container flex-1 overflow-y-auto px-6 pb-4" 
             onScroll={(e) => { 
-                // 🔥 Auto Collapse Logic: If at top and user drags down (scrollTop stays 0)
-                // Note: Simple check for top position.
-                if(e.currentTarget.scrollTop <= 0 && isExpanded) {
-                   // No-op here, require user to tap handle or map usually better for UX,
-                   // but leaving structure if needed. 
-                   // Rely on MapClicker and Handle for robust collapse.
-                }
+                // Scroll Up to Expand
                 if(e.currentTarget.scrollTop > 50 && !isExpanded) setIsExpanded(true); 
             }}
           >
@@ -620,7 +630,13 @@ export default function App() {
              {timelineDays.map(day => {
                const isEven = parseInt(day) % 2 === 0;
                return (
-                <button key={day} onClick={() => document.getElementById(`day-${day}`)?.scrollIntoView({ behavior: 'smooth' })} className="w-8 h-8 rounded-full text-[10px] font-bold flex items-center justify-center shrink-0 transition-all hover:scale-110" style={{ backgroundColor: THEME.burntOrange, color: '#fff', opacity: isEven ? 0.7 : 1 }}>D{day}</button>
+                <button 
+                    key={day} 
+                    onClick={() => document.getElementById(`day-${day}`)?.scrollIntoView({ behavior: 'smooth' })} 
+                    className="w-8 h-8 rounded-full text-[10px] font-bold flex items-center justify-center shrink-0 transition-all hover:scale-110 mb-2 border border-orange-200" 
+                    // 🔥 ALTERNATING LIGHT COLORS
+                    style={{ backgroundColor: isEven ? '#fff7ed' : '#ffedd5', color: '#c2410c' }}
+                >D{day}</button>
                )
              })}
            </div>
@@ -650,15 +666,15 @@ export default function App() {
                 return (
                   <div key={day} id={`day-${day}`} className="py-8 scroll-mt-20 border-b-2 border-dashed border-stone-300/50">
                     <div className="px-4 mb-6">
-                      {/* 🔥 NEW ITINERARY HEADER STYLE */}
-                      <div className="flex items-center gap-3 mb-2">
-                        <div className="bg-orange-100 text-orange-600 px-3 py-1 rounded-lg text-2xl font-black tracking-tight shadow-sm border border-orange-200/50">Day {day}</div>
-                        <span className="text-stone-400 font-bold text-xs tracking-widest uppercase">{items[0].Date}</span>
+                      {/* 🔥 BIGGER DAY HEADER */}
+                      <div className="flex items-baseline gap-3 mb-2">
+                        <h3 className="text-4xl font-black text-stone-800 tracking-tighter">Day {day}</h3>
+                        <span className="text-stone-500 font-bold text-sm tracking-widest">{items[0].Date}</span>
                       </div>
-                      <h4 className="text-lg font-bold leading-tight pl-1" style={{ color: THEME.darkOlive }}>{daySummary.Highlight || `Adventure Day ${day}`}</h4>
+                      <h4 className="text-xl font-bold leading-tight" style={{ color: THEME.darkOlive }}>{daySummary.Highlight || `Adventure Day ${day}`}</h4>
                     </div>
                     {/* Added pl-16 to avoid timeline overlap */}
-                    <div className="space-y-4 px-4 pl-12"> 
+                    <div className="space-y-4 px-4 pl-16"> 
                       {items.map((item, idx) => {
                         const catColor = getCategoryColor(item.Category);
                         const currentHour = new Date().getHours();
