@@ -267,7 +267,8 @@ const TextZoomModal = ({ isOpen, content, onClose, title }) => {
     <div className="fixed inset-0 z-[10000] flex items-center justify-center p-6 bg-stone-900/60 backdrop-blur-md">
       <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="bg-[#F9F7F2] w-full max-w-lg max-h-[80vh] rounded-3xl shadow-2xl overflow-hidden relative flex flex-col">
         <div className="px-6 py-4 border-b border-stone-200 flex justify-between items-center bg-white/50"><h3 className="font-bold text-lg" style={{ color: THEME.olive }}>{title}</h3></div>
-        <div className="p-8 overflow-y-auto"><p className="text-lg leading-loose font-bold whitespace-pre-line" style={{ color: THEME.darkOlive }}>{content}</p></div>
+        {/* 🔥 FIX 3: TEXT ZOOMED TO 2XL */}
+        <div className="p-8 overflow-y-auto"><p className="text-2xl leading-loose font-bold whitespace-pre-line" style={{ color: THEME.darkOlive }}>{content}</p></div>
         <button onClick={onClose} className="absolute top-3 right-3 p-2 rounded-full bg-white/30 backdrop-blur-md border border-white/50 shadow-sm"><X size={28} color={THEME.darkOlive} /></button>
       </motion.div>
     </div>
@@ -324,9 +325,9 @@ export default function App() {
   const [showExpenses, setShowExpenses] = useState(false);
   const [expenseWarning, setExpenseWarning] = useState(false);
   const [showDaySelector, setShowDaySelector] = useState(false);
-  const [isExpanded, setIsExpanded] = useState(false); // New state for BottomSheet
+  const [isExpanded, setIsExpanded] = useState(false); 
   
-  // 🔥 NEW: Refs for Touch Handling
+  // 🔥 Ref for Touch Logic
   const touchStartRef = useRef(0);
 
   const tripStatus = getTripStatus();
@@ -346,9 +347,7 @@ export default function App() {
 
   // Global Reset Logic: Reset states when view changes
   useEffect(() => {
-      // 1. Reset Dashboard Expansion
       setIsExpanded(false);
-      // 2. Reset Scroll (if possible)
       window.scrollTo(0,0);
   }, [view]);
 
@@ -456,14 +455,13 @@ export default function App() {
     return (
       <div className="h-screen w-full flex flex-col relative overflow-hidden font-sans pb-16" style={{ backgroundColor: THEME.bg }}>
         
-        {/* 🔥 STANDARD HEADER (FIXED TOP, LEFT ALIGNED + RIGHT HIGHLIGHT) */}
+        {/* 🔥 FIX 1: HEADER WITHOUT ICON */}
         <header className="absolute top-0 left-0 right-0 z-[2000] bg-white/90 backdrop-blur-md border-b px-6 py-3 flex items-center justify-between shadow-sm h-14" style={{ borderColor: THEME.beige }}>
             <div className="flex items-center gap-2 flex-shrink-0">
-                <MapIcon size={20} className="" color={THEME.darkOlive}/>
+                {/* Icon removed */}
                 <h2 className="text-base font-bold" style={{ color: THEME.darkOlive }}>{getTabName('dashboard', '旅程儀表')}</h2>
             </div>
             
-            {/* 🌟 Highlight Moved to Header Right (Break Words) */}
             {currentSummary.Highlight && (
                <div className="flex-1 flex items-center justify-end gap-1.5 ml-3">
                   <Star size={12} className="text-orange-500 fill-orange-500 flex-shrink-0"/>
@@ -476,12 +474,12 @@ export default function App() {
         <div 
             className={`w-full relative z-0 transition-all duration-500 ease-in-out ${isExpanded ? 'h-[15%]' : 'h-[45%]'}`} 
         >
-          <div className="w-full h-full pt-14"> {/* Add padding for fixed header */}
+          <div className="w-full h-full pt-14"> 
             <MapContainer center={mapCenter} zoom={6} className="w-full h-full" zoomControl={false}>
                 <TileLayer url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png" attribution='© OpenStreetMap' />
                 <MapUpdater center={mapCenter} />
                 <MapResizer isExpanded={isExpanded} /> 
-                <MapResetOnCollapse isExpanded={isExpanded} center={mapCenter} /> {/* 🔥 RECENTER FIX */}
+                <MapResetOnCollapse isExpanded={isExpanded} center={mapCenter} /> 
                 <MapClicker onClick={() => setIsExpanded(false)} /> 
                 {currentItinerary.map((stop, idx) => stop.Lat && (
                 <Marker key={idx} position={[parseFloat(stop.Lat), parseFloat(stop.Lng)]} icon={createCustomIcon(stop.Category?.includes('Stay') ? '🏠' : stop.Category?.includes('Food') ? '🍔' : '📍')}>
@@ -495,15 +493,18 @@ export default function App() {
         {/* INFO SHEET (Dynamic Height) */}
         <div 
             className={`bg-white rounded-t-[2rem] relative z-10 shadow-[0_-5px_20px_rgba(0,0,0,0.1)] flex flex-col transition-all duration-500 ease-in-out ${isExpanded ? 'h-[85%] -mt-0' : 'h-[55%] -mt-6'}`}
-            // 🔥 Touch Swipe Logic
+            // 🔥 TOUCH GESTURE LOGIC (Restored)
             onTouchStart={(e) => { touchStartRef.current = e.touches[0].clientY; }}
             onTouchEnd={(e) => {
                 const touchEnd = e.changedTouches[0].clientY;
-                const container = e.currentTarget.querySelector('.scroll-container'); // Get scrollable area
+                const diff = touchStartRef.current - touchEnd; 
+                const container = e.currentTarget.querySelector('.scroll-container'); 
                 const isAtTop = container ? container.scrollTop === 0 : true;
                 
-                // Swipe Down Logic (Collapse)
-                if (touchEnd - touchStartRef.current > 50 && isAtTop && isExpanded) {
+                if (!isExpanded && diff > 50) {
+                     setIsExpanded(true);
+                }
+                if (isExpanded && isAtTop && diff < -50) {
                     setIsExpanded(false);
                 }
             }}
@@ -519,7 +520,6 @@ export default function App() {
           <div 
             className="scroll-container flex-1 overflow-y-auto px-6 pb-4" 
             onScroll={(e) => { 
-                // Scroll Up to Expand
                 if(e.currentTarget.scrollTop > 50 && !isExpanded) setIsExpanded(true); 
             }}
           >
@@ -559,7 +559,8 @@ export default function App() {
                     <div className="p-2 bg-white rounded-full">{getWeatherIcon(currentWeather?.code)}</div>
                     <div>
                         <p className="text-xs font-bold uppercase opacity-60" style={{ color: THEME.darkOlive }}>{currentSummary['Weather City']}</p>
-                        {currentWeather ? <p className="font-bold text-xs whitespace-nowrap" style={{ color: THEME.darkOlive }}>🔺{currentWeather.max}° 🔻{currentWeather.min}°</p> : <p className="font-bold text-sm" style={{ color: THEME.darkOlive }}>Loading...</p>}
+                        {/* 🔥 FIX 2: WEATHER FONT BIGGER (text-lg) */}
+                        {currentWeather ? <p className="font-bold text-lg whitespace-nowrap" style={{ color: THEME.darkOlive }}>🔺{currentWeather.max}° 🔻{currentWeather.min}°</p> : <p className="font-bold text-sm" style={{ color: THEME.darkOlive }}>Loading...</p>}
                     </div>
                   </div>
                   <div className="rounded-2xl p-4 border flex items-center gap-3 shadow-sm" style={{ backgroundColor: THEME.bg, borderColor: THEME.beige }}>
@@ -634,7 +635,6 @@ export default function App() {
                     key={day} 
                     onClick={() => document.getElementById(`day-${day}`)?.scrollIntoView({ behavior: 'smooth' })} 
                     className="w-8 h-8 rounded-full text-[10px] font-bold flex items-center justify-center shrink-0 transition-all hover:scale-110 mb-2 border border-orange-200" 
-                    // 🔥 ALTERNATING LIGHT COLORS
                     style={{ backgroundColor: isEven ? '#fff7ed' : '#ffedd5', color: '#c2410c' }}
                 >D{day}</button>
                )
@@ -645,7 +645,7 @@ export default function App() {
         <div className="flex-1 min-w-0">
           <header className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b px-6 py-4 flex items-center justify-between shadow-sm pr-2" style={{ borderColor: THEME.beige }}>
             <div className="flex items-center gap-3">
-               <List size={20} color={THEME.darkOlive}/>
+               {/* 🔥 FIX 1: HEADER WITHOUT ICON */}
                <h2 className="text-xl font-bold flex items-center gap-2" style={{ color: THEME.darkOlive }}>{getTabName('itinerary', '行程手帳')}</h2>
             </div>
             <div className="bg-stone-100 rounded-lg p-1 flex shrink-0">
@@ -666,15 +666,13 @@ export default function App() {
                 return (
                   <div key={day} id={`day-${day}`} className="py-8 scroll-mt-20 border-b-2 border-dashed border-stone-300/50">
                     <div className="px-4 mb-6">
-                      {/* 🔥 BIGGER DAY HEADER */}
                       <div className="flex items-baseline gap-3 mb-2">
-                        <h3 className="text-4xl font-black text-stone-800 tracking-tighter">Day {day}</h3>
+                        <h3 className="text-3xl font-black text-stone-800 tracking-tighter">Day {day}</h3>
                         <span className="text-stone-500 font-bold text-sm tracking-widest">{items[0].Date}</span>
                       </div>
                       <h4 className="text-xl font-bold leading-tight" style={{ color: THEME.darkOlive }}>{daySummary.Highlight || `Adventure Day ${day}`}</h4>
                     </div>
-                    {/* Added pl-16 to avoid timeline overlap */}
-                    <div className="space-y-4 px-4 pl-16"> 
+                    <div className="space-y-4 px-4"> 
                       {items.map((item, idx) => {
                         const catColor = getCategoryColor(item.Category);
                         const currentHour = new Date().getHours();
