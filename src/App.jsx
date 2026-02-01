@@ -241,7 +241,8 @@ const CopyButton = ({ text, className }) => {
 
 // 📱 Bottom Nav (Icon Only)
 const BottomNav = ({ currentView, onChange }) => (
-    <div className="fixed bottom-0 left-0 right-0 z-[5000] bg-white border-t border-stone-200 pb-safe h-16 px-4 flex justify-around items-center shadow-[0_-5px_20px_rgba(0,0,0,0.05)]">
+    // 🔥 FIX 4: Lifted Up (h-20 + pb-4)
+    <div className="fixed bottom-0 left-0 right-0 z-[5000] bg-white border-t border-stone-200 h-20 pb-4 px-4 flex justify-around items-center shadow-[0_-5px_20px_rgba(0,0,0,0.05)]">
         {[
             { id: 'intro', icon: <Tent size={28} /> },
             { id: 'dashboard', icon: <MapIcon size={28} /> },
@@ -267,7 +268,7 @@ const TextZoomModal = ({ isOpen, content, onClose, title }) => {
     <div className="fixed inset-0 z-[10000] flex items-center justify-center p-6 bg-stone-900/60 backdrop-blur-md">
       <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="bg-[#F9F7F2] w-full max-w-lg max-h-[80vh] rounded-3xl shadow-2xl overflow-hidden relative flex flex-col">
         <div className="px-6 py-4 border-b border-stone-200 flex justify-between items-center bg-white/50"><h3 className="font-bold text-lg" style={{ color: THEME.olive }}>{title}</h3></div>
-        {/* 🔥 FIX 3: TEXT ZOOMED TO 2XL */}
+        {/* 🔥 ZOOM FONT: text-2xl */}
         <div className="p-8 overflow-y-auto"><p className="text-2xl leading-loose font-bold whitespace-pre-line" style={{ color: THEME.darkOlive }}>{content}</p></div>
         <button onClick={onClose} className="absolute top-3 right-3 p-2 rounded-full bg-white/30 backdrop-blur-md border border-white/50 shadow-sm"><X size={28} color={THEME.darkOlive} /></button>
       </motion.div>
@@ -455,17 +456,17 @@ export default function App() {
     return (
       <div className="h-screen w-full flex flex-col relative overflow-hidden font-sans pb-16" style={{ backgroundColor: THEME.bg }}>
         
-        {/* 🔥 FIX 1: HEADER WITHOUT ICON */}
+        {/* 🔥 STANDARD HEADER (FIXED TOP, LEFT ALIGNED + RIGHT HIGHLIGHT) */}
         <header className="absolute top-0 left-0 right-0 z-[2000] bg-white/90 backdrop-blur-md border-b px-6 py-3 flex items-center justify-between shadow-sm h-14" style={{ borderColor: THEME.beige }}>
             <div className="flex items-center gap-2 flex-shrink-0">
-                {/* Icon removed */}
                 <h2 className="text-base font-bold" style={{ color: THEME.darkOlive }}>{getTabName('dashboard', '旅程儀表')}</h2>
             </div>
             
+            {/* 🌟 Highlight Moved to Header Right (Break Words + Text SM) */}
             {currentSummary.Highlight && (
                <div className="flex-1 flex items-center justify-end gap-1.5 ml-3">
                   <Star size={12} className="text-orange-500 fill-orange-500 flex-shrink-0"/>
-                  <span className="text-xs font-bold text-orange-600 text-right break-words leading-tight">{currentSummary.Highlight}</span>
+                  <span className="text-sm font-bold text-orange-600 text-right break-words leading-tight">{currentSummary.Highlight}</span>
                </div>
             )}
         </header>
@@ -474,12 +475,12 @@ export default function App() {
         <div 
             className={`w-full relative z-0 transition-all duration-500 ease-in-out ${isExpanded ? 'h-[15%]' : 'h-[45%]'}`} 
         >
-          <div className="w-full h-full pt-14"> 
+          <div className="w-full h-full pt-14"> {/* Add padding for fixed header */}
             <MapContainer center={mapCenter} zoom={6} className="w-full h-full" zoomControl={false}>
                 <TileLayer url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png" attribution='© OpenStreetMap' />
                 <MapUpdater center={mapCenter} />
                 <MapResizer isExpanded={isExpanded} /> 
-                <MapResetOnCollapse isExpanded={isExpanded} center={mapCenter} /> 
+                <MapResetOnCollapse isExpanded={isExpanded} center={mapCenter} /> {/* 🔥 RECENTER FIX */}
                 <MapClicker onClick={() => setIsExpanded(false)} /> 
                 {currentItinerary.map((stop, idx) => stop.Lat && (
                 <Marker key={idx} position={[parseFloat(stop.Lat), parseFloat(stop.Lng)]} icon={createCustomIcon(stop.Category?.includes('Stay') ? '🏠' : stop.Category?.includes('Food') ? '🍔' : '📍')}>
@@ -520,14 +521,16 @@ export default function App() {
           <div 
             className="scroll-container flex-1 overflow-y-auto px-6 pb-4" 
             onScroll={(e) => { 
+                // Fallback for desktop mouse scroll
                 if(e.currentTarget.scrollTop > 50 && !isExpanded) setIsExpanded(true); 
             }}
           >
             
-            {/* HEADER: Date Selector */}
+            {/* HEADER: Date Selector (CENTERED) */}
             <div className="flex items-center justify-between w-full mb-6">
                 <button disabled={dayIndex === 0} onClick={() => setDayIndex(prev => Math.max(0, prev - 1))} className="p-2 rounded-full bg-stone-100 disabled:opacity-30"><ChevronLeft color={THEME.darkOlive}/></button>
-                <div className="flex items-center gap-2">
+                {/* 🔥 FIX 3: DATE CENTERED */}
+                <div className="flex-1 flex justify-center items-center gap-2">
                     <button onClick={() => jumpToItineraryDay(currentSummary.Day)} className="text-center group active:scale-95 transition-transform">
                         <h2 className="text-2xl font-black tracking-wide" style={{ color: THEME.darkOlive }}>{currentSummary.Date || 'Loading...'}</h2>
                         <span className="text-xs font-bold px-3 py-0.5 rounded-full uppercase tracking-widest inline-flex items-center gap-1 mt-1" style={{ backgroundColor: THEME.beige, color: THEME.darkOlive }}>
@@ -559,8 +562,8 @@ export default function App() {
                     <div className="p-2 bg-white rounded-full">{getWeatherIcon(currentWeather?.code)}</div>
                     <div>
                         <p className="text-xs font-bold uppercase opacity-60" style={{ color: THEME.darkOlive }}>{currentSummary['Weather City']}</p>
-                        {/* 🔥 FIX 2: WEATHER FONT BIGGER (text-lg) */}
-                        {currentWeather ? <p className="font-bold text-lg whitespace-nowrap" style={{ color: THEME.darkOlive }}>🔺{currentWeather.max}° 🔻{currentWeather.min}°</p> : <p className="font-bold text-sm" style={{ color: THEME.darkOlive }}>Loading...</p>}
+                        {/* 🔥 FIX 1: WEATHER FONT BASE+BLACK */}
+                        {currentWeather ? <p className="font-black text-base whitespace-nowrap" style={{ color: THEME.darkOlive }}>🔺{currentWeather.max}° 🔻{currentWeather.min}°</p> : <p className="font-bold text-sm" style={{ color: THEME.darkOlive }}>Loading...</p>}
                     </div>
                   </div>
                   <div className="rounded-2xl p-4 border flex items-center gap-3 shadow-sm" style={{ backgroundColor: THEME.bg, borderColor: THEME.beige }}>
@@ -645,7 +648,6 @@ export default function App() {
         <div className="flex-1 min-w-0">
           <header className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b px-6 py-4 flex items-center justify-between shadow-sm pr-2" style={{ borderColor: THEME.beige }}>
             <div className="flex items-center gap-3">
-               {/* 🔥 FIX 1: HEADER WITHOUT ICON */}
                <h2 className="text-xl font-bold flex items-center gap-2" style={{ color: THEME.darkOlive }}>{getTabName('itinerary', '行程手帳')}</h2>
             </div>
             <div className="bg-stone-100 rounded-lg p-1 flex shrink-0">
@@ -752,7 +754,6 @@ export default function App() {
       <div className="min-h-screen pb-24" style={{ backgroundColor: THEME.bg }}>
         <header className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b shadow-sm px-6 py-4 flex flex-col justify-center" style={{ borderColor: THEME.beige }}>
             <div className="flex items-center gap-3 mb-3">
-                <CheckSquare size={20} color={THEME.burntOrange} /> 
                 <h2 className="text-xl font-bold" style={{ color: THEME.darkOlive }}>{getTabName('backpack', '背包清單')}</h2>
             </div>
             <div className="flex px-0 pb-0 gap-2">
@@ -780,7 +781,6 @@ export default function App() {
     return (
       <div className="min-h-screen pb-24" style={{ backgroundColor: THEME.bg }}>
         <header className="sticky top-0 z-40 bg-white/90 backdrop-blur-md px-6 py-4 border-b shadow-sm flex items-center justify-start gap-3" style={{ borderColor: THEME.beige }}>
-            <CreditCard size={20} color={THEME.burntOrange} /> 
             <h2 className="text-xl font-bold" style={{ color: THEME.darkOlive }}>{getTabName('expenses', '旅費統計')}</h2>
         </header>
         <div className="p-4 max-w-2xl mx-auto">
