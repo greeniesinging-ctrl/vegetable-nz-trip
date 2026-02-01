@@ -241,7 +241,6 @@ const CopyButton = ({ text, className }) => {
 
 // 📱 Bottom Nav (Icon Only)
 const BottomNav = ({ currentView, onChange }) => (
-    // 🔥 FIX 4: Lifted Up (h-20 + pb-4)
     <div className="fixed bottom-0 left-0 right-0 z-[5000] bg-white border-t border-stone-200 h-20 pb-4 px-4 flex justify-around items-center shadow-[0_-5px_20px_rgba(0,0,0,0.05)]">
         {[
             { id: 'intro', icon: <Tent size={28} /> },
@@ -268,7 +267,6 @@ const TextZoomModal = ({ isOpen, content, onClose, title }) => {
     <div className="fixed inset-0 z-[10000] flex items-center justify-center p-6 bg-stone-900/60 backdrop-blur-md">
       <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="bg-[#F9F7F2] w-full max-w-lg max-h-[80vh] rounded-3xl shadow-2xl overflow-hidden relative flex flex-col">
         <div className="px-6 py-4 border-b border-stone-200 flex justify-between items-center bg-white/50"><h3 className="font-bold text-lg" style={{ color: THEME.olive }}>{title}</h3></div>
-        {/* 🔥 ZOOM FONT: text-2xl */}
         <div className="p-8 overflow-y-auto"><p className="text-2xl leading-loose font-bold whitespace-pre-line" style={{ color: THEME.darkOlive }}>{content}</p></div>
         <button onClick={onClose} className="absolute top-3 right-3 p-2 rounded-full bg-white/30 backdrop-blur-md border border-white/50 shadow-sm"><X size={28} color={THEME.darkOlive} /></button>
       </motion.div>
@@ -462,7 +460,6 @@ export default function App() {
                 <h2 className="text-base font-bold" style={{ color: THEME.darkOlive }}>{getTabName('dashboard', '旅程儀表')}</h2>
             </div>
             
-            {/* 🌟 Highlight Moved to Header Right (Break Words + Text SM) */}
             {currentSummary.Highlight && (
                <div className="flex-1 flex items-center justify-end gap-1.5 ml-3">
                   <Star size={12} className="text-orange-500 fill-orange-500 flex-shrink-0"/>
@@ -526,20 +523,22 @@ export default function App() {
             }}
           >
             
-            {/* HEADER: Date Selector (CENTERED) */}
-            <div className="flex items-center justify-between w-full mb-6">
-                <button disabled={dayIndex === 0} onClick={() => setDayIndex(prev => Math.max(0, prev - 1))} className="p-2 rounded-full bg-stone-100 disabled:opacity-30"><ChevronLeft color={THEME.darkOlive}/></button>
-                {/* 🔥 FIX 3: DATE CENTERED */}
-                <div className="flex-1 flex justify-center items-center gap-2">
-                    <button onClick={() => jumpToItineraryDay(currentSummary.Day)} className="text-center group active:scale-95 transition-transform">
+            {/* HEADER: Date Selector (Redesigned) */}
+            {/* 🔥 FIX 2: Absolute Arrows, Center Date/Day/Icon */}
+            <div className="relative w-full flex items-center justify-center mb-6 h-10">
+                <button disabled={dayIndex === 0} onClick={() => setDayIndex(prev => Math.max(0, prev - 1))} className="absolute left-0 p-2 rounded-full bg-stone-100 disabled:opacity-30"><ChevronLeft color={THEME.darkOlive}/></button>
+                
+                <div className="flex items-center gap-2">
+                    <button onClick={() => jumpToItineraryDay(currentSummary.Day)} className="text-center group active:scale-95 transition-transform flex flex-col items-center leading-none">
                         <h2 className="text-2xl font-black tracking-wide" style={{ color: THEME.darkOlive }}>{currentSummary.Date || 'Loading...'}</h2>
                         <span className="text-xs font-bold px-3 py-0.5 rounded-full uppercase tracking-widest inline-flex items-center gap-1 mt-1" style={{ backgroundColor: THEME.beige, color: THEME.darkOlive }}>
-                        Day {currentSummary.Day || '-'} <ArrowRight size={10} />
+                        Day {currentSummary.Day || '-'} 
                         </span>
                     </button>
                     <button onClick={() => setShowDaySelector(true)} className="p-2 rounded-full bg-stone-100 hover:bg-stone-200 active:scale-95 transition-all"><Calendar size={18} color={THEME.olive} /></button>
                 </div>
-                <button disabled={dayIndex >= data.summary.length - 1} onClick={() => setDayIndex(prev => Math.min(data.summary.length - 1, prev + 1))} className="p-2 rounded-full bg-stone-100 disabled:opacity-30"><ChevronRight color={THEME.darkOlive}/></button>
+
+                <button disabled={dayIndex >= data.summary.length - 1} onClick={() => setDayIndex(prev => Math.min(data.summary.length - 1, prev + 1))} className="absolute right-0 p-2 rounded-full bg-stone-100 disabled:opacity-30"><ChevronRight color={THEME.darkOlive}/></button>
             </div>
 
             {/* 🎫 Quick Wallet */}
@@ -562,8 +561,8 @@ export default function App() {
                     <div className="p-2 bg-white rounded-full">{getWeatherIcon(currentWeather?.code)}</div>
                     <div>
                         <p className="text-xs font-bold uppercase opacity-60" style={{ color: THEME.darkOlive }}>{currentSummary['Weather City']}</p>
-                        {/* 🔥 FIX 1: WEATHER FONT BASE+BLACK */}
-                        {currentWeather ? <p className="font-black text-base whitespace-nowrap" style={{ color: THEME.darkOlive }}>🔺{currentWeather.max}° 🔻{currentWeather.min}°</p> : <p className="font-bold text-sm" style={{ color: THEME.darkOlive }}>Loading...</p>}
+                        {/* 🔥 FIX 1: WEATHER FONT REVERTED (text-xs) */}
+                        {currentWeather ? <p className="font-bold text-xs whitespace-nowrap" style={{ color: THEME.darkOlive }}>🔺{currentWeather.max}° 🔻{currentWeather.min}°</p> : <p className="font-bold text-sm" style={{ color: THEME.darkOlive }}>Loading...</p>}
                     </div>
                   </div>
                   <div className="rounded-2xl p-4 border flex items-center gap-3 shadow-sm" style={{ backgroundColor: THEME.bg, borderColor: THEME.beige }}>
