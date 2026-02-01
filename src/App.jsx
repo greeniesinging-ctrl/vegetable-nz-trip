@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Papa from 'papaparse';
 import { 
@@ -216,7 +216,6 @@ const MapResetOnCollapse = ({ isExpanded, center }) => {
 const MapClicker = ({ onClick }) => {
     useMapEvents({
         click: () => onClick(),
-        dragstart: () => onClick(),
     });
     return null;
 };
@@ -342,9 +341,12 @@ export default function App() {
       setView('dashboard');
   };
 
-  // Reset View State on View Change
+  // Global Reset Logic: Reset states when view changes
   useEffect(() => {
+      // 1. Reset Dashboard Expansion
       setIsExpanded(false);
+      // 2. Reset Scroll (if possible)
+      window.scrollTo(0,0);
   }, [view]);
 
   useEffect(() => {
@@ -452,16 +454,25 @@ export default function App() {
       <div className="h-screen w-full flex flex-col relative overflow-hidden font-sans pb-16" style={{ backgroundColor: THEME.bg }}>
         
         {/* 🔥 STANDARD HEADER (FIXED TOP, LEFT ALIGNED) */}
-        <header className="absolute top-0 left-0 right-0 z-[2000] bg-white/90 backdrop-blur-md border-b px-6 py-3 flex items-center justify-start shadow-sm h-14" style={{ borderColor: THEME.beige }}>
-            <MapIcon size={20} className="mr-3" color={THEME.darkOlive}/>
-            <h2 className="text-base font-bold" style={{ color: THEME.darkOlive }}>{getTabName('dashboard', '旅程儀表')}</h2>
+        <header className="absolute top-0 left-0 right-0 z-[2000] bg-white/90 backdrop-blur-md border-b px-6 py-2 flex flex-col justify-center items-start shadow-sm h-auto min-h-[60px]" style={{ borderColor: THEME.beige }}>
+            <div className="flex items-center gap-2">
+                <MapIcon size={20} className="" color={THEME.darkOlive}/>
+                <h2 className="text-base font-bold" style={{ color: THEME.darkOlive }}>{getTabName('dashboard', '旅程儀表')}</h2>
+            </div>
+            {/* 🌟 Highlight Moved Inside Header */}
+            {currentSummary.Highlight && (
+               <div className="flex items-center gap-1.5 mt-1 ml-0.5">
+                  <Star size={12} className="text-orange-500 fill-orange-500"/>
+                  <span className="text-xs font-bold text-orange-600 truncate max-w-[280px]">{currentSummary.Highlight}</span>
+               </div>
+            )}
         </header>
 
         {/* MAP AREA (Dynamic Height) */}
         <div 
             className={`w-full relative z-0 transition-all duration-500 ease-in-out ${isExpanded ? 'h-[15%]' : 'h-[45%]'}`} 
         >
-          <div className="w-full h-full pt-14"> {/* Add padding for fixed header */}
+          <div className="w-full h-full pt-16"> {/* Add padding for fixed header */}
             <MapContainer center={mapCenter} zoom={6} className="w-full h-full" zoomControl={false}>
                 <TileLayer url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png" attribution='© OpenStreetMap' />
                 <MapUpdater center={mapCenter} />
@@ -475,19 +486,6 @@ export default function App() {
                 ))}
             </MapContainer>
           </div>
-          
-          {/* Floating Highlight Card (CENTERED TOP, Hidden when Expanded) */}
-          <AnimatePresence>
-            {currentSummary.Highlight && !isExpanded && (
-                <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} className="absolute top-20 left-1/2 -translate-x-1/2 w-auto max-w-[90%] z-[900] backdrop-blur-md bg-white/90 rounded-2xl py-2 px-4 shadow-xl border border-white/50 ring-1 ring-black/5 flex items-center gap-3">
-                    <div className="bg-orange-100 p-1.5 rounded-full shrink-0"><Star size={16} className="text-orange-500" fill="currentColor"/></div>
-                    <div className="min-w-0">
-                        <p className="text-[9px] font-bold uppercase tracking-widest text-stone-500 leading-none mb-0.5">TODAY'S HIGHLIGHT</p>
-                        <p className="font-bold text-sm leading-tight text-stone-800 break-words whitespace-normal">{currentSummary.Highlight}</p>
-                    </div>
-                </motion.div>
-            )}
-          </AnimatePresence>
         </div>
 
         {/* INFO SHEET (Dynamic Height) */}
@@ -505,12 +503,12 @@ export default function App() {
           <div 
             className="flex-1 overflow-y-auto px-6 pb-4" 
             onScroll={(e) => { 
-                // 🔥 Auto Collapse Logic: If at top and user drags down
+                // 🔥 Auto Collapse Logic: If at top and user drags down (scrollTop stays 0)
+                // Note: Simple check for top position.
                 if(e.currentTarget.scrollTop <= 0 && isExpanded) {
-                    // Simple check: if already at top, could potentially trigger collapse on pull
-                    // For now relying on click/handle as safer interaction, but "Slide Down" logic 
-                    // is best handled by checking if they scroll UP (to expand) and if they hit top (to prepare collapse).
-                    // Without a gesture library, scroll top=0 is the best proxy.
+                   // No-op here, require user to tap handle or map usually better for UX,
+                   // but leaving structure if needed. 
+                   // Rely on MapClicker and Handle for robust collapse.
                 }
                 if(e.currentTarget.scrollTop > 50 && !isExpanded) setIsExpanded(true); 
             }}
@@ -652,14 +650,15 @@ export default function App() {
                 return (
                   <div key={day} id={`day-${day}`} className="py-8 scroll-mt-20 border-b-2 border-dashed border-stone-300/50">
                     <div className="px-4 mb-6">
-                      {/* 🔥 BIGGER DAY HEADER */}
-                      <div className="flex items-baseline gap-3 mb-2">
-                        <h3 className="text-4xl font-black text-stone-800 tracking-tighter">Day {day}</h3>
-                        <span className="text-stone-500 font-bold text-sm tracking-widest">{items[0].Date}</span>
+                      {/* 🔥 NEW ITINERARY HEADER STYLE */}
+                      <div className="flex items-center gap-3 mb-2">
+                        <div className="bg-orange-100 text-orange-600 px-3 py-1 rounded-lg text-2xl font-black tracking-tight shadow-sm border border-orange-200/50">Day {day}</div>
+                        <span className="text-stone-400 font-bold text-xs tracking-widest uppercase">{items[0].Date}</span>
                       </div>
-                      <h4 className="text-xl font-bold leading-tight" style={{ color: THEME.darkOlive }}>{daySummary.Highlight || `Adventure Day ${day}`}</h4>
+                      <h4 className="text-lg font-bold leading-tight pl-1" style={{ color: THEME.darkOlive }}>{daySummary.Highlight || `Adventure Day ${day}`}</h4>
                     </div>
-                    <div className="space-y-4 px-4">
+                    {/* Added pl-16 to avoid timeline overlap */}
+                    <div className="space-y-4 px-4 pl-12"> 
                       {items.map((item, idx) => {
                         const catColor = getCategoryColor(item.Category);
                         const currentHour = new Date().getHours();
