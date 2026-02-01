@@ -7,7 +7,7 @@ import {
   AlertTriangle, Home, Plane, Car, Utensils, Camera, ShoppingBag, 
   Info, Ticket, ArrowRight, ZoomIn, Search, ThermometerSun, Fuel, HeartPulse,
   Calendar, Cloud, CloudRain, Sun, CloudLightning, CloudSnow, Wind, Star,
-  Copy, Check, ExternalLink, Tent, Minus, Clock
+  Copy, Check, ExternalLink, Tent, Minus
 } from 'lucide-react';
 import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents } from 'react-leaflet';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, Legend } from 'recharts';
@@ -324,19 +324,12 @@ export default function App() {
   const [showExpenses, setShowExpenses] = useState(false);
   const [expenseWarning, setExpenseWarning] = useState(false);
   const [showDaySelector, setShowDaySelector] = useState(false);
-  const [isExpanded, setIsExpanded] = useState(false); 
+  const [isExpanded, setIsExpanded] = useState(false); // New state for BottomSheet
   
-  // 🔥 Ref for Touch Logic
+  // 🔥 NEW: Refs for Touch Handling
   const touchStartRef = useRef(0);
 
   const tripStatus = getTripStatus();
-
-  // 🔥 BODY LOCK EFFECT (Prevents rubber-banding on mobile)
-  useEffect(() => {
-    // Only lock body overflow, allow content scroll
-    document.body.style.overflow = 'hidden';
-    return () => { document.body.style.overflow = ''; };
-  }, []);
 
   // Reset function logic
   const handleStartEngine = () => {
@@ -356,8 +349,6 @@ export default function App() {
       // 1. Reset Dashboard Expansion
       setIsExpanded(false);
       // 2. Reset Scroll (if possible)
-      // Note: Body is locked, we rely on component refs to scroll to top usually, 
-      // but for simple navigation resets:
       window.scrollTo(0,0);
   }, [view]);
 
@@ -504,21 +495,15 @@ export default function App() {
         {/* INFO SHEET (Dynamic Height) */}
         <div 
             className={`bg-white rounded-t-[2rem] relative z-10 shadow-[0_-5px_20px_rgba(0,0,0,0.1)] flex flex-col transition-all duration-500 ease-in-out ${isExpanded ? 'h-[85%] -mt-0' : 'h-[55%] -mt-6'}`}
-            // 🔥 TOUCH GESTURE LOGIC
+            // 🔥 Touch Swipe Logic
             onTouchStart={(e) => { touchStartRef.current = e.touches[0].clientY; }}
             onTouchEnd={(e) => {
                 const touchEnd = e.changedTouches[0].clientY;
-                const diff = touchStartRef.current - touchEnd; // > 0 means Swipe UP
-                const container = e.currentTarget.querySelector('.scroll-container'); 
+                const container = e.currentTarget.querySelector('.scroll-container'); // Get scrollable area
                 const isAtTop = container ? container.scrollTop === 0 : true;
                 
-                // Logic A: Swipe Up to Expand
-                if (!isExpanded && diff > 50) {
-                     setIsExpanded(true);
-                }
-                
-                // Logic B: Swipe Down to Collapse (Only if at top)
-                if (isExpanded && isAtTop && diff < -50) {
+                // Swipe Down Logic (Collapse)
+                if (touchEnd - touchStartRef.current > 50 && isAtTop && isExpanded) {
                     setIsExpanded(false);
                 }
             }}
@@ -534,7 +519,7 @@ export default function App() {
           <div 
             className="scroll-container flex-1 overflow-y-auto px-6 pb-4" 
             onScroll={(e) => { 
-                // Fallback for desktop mouse scroll
+                // Scroll Up to Expand
                 if(e.currentTarget.scrollTop > 50 && !isExpanded) setIsExpanded(true); 
             }}
           >
@@ -642,21 +627,18 @@ export default function App() {
       <div className="min-h-screen pb-24 flex" style={{ backgroundColor: THEME.bg }}>
         {itineraryMode === 'list' && (
            <div className="w-12 sticky top-0 h-screen flex flex-col items-center py-20 gap-2 z-30 overflow-y-auto no-scrollbar border-r" style={{ borderColor: THEME.beige, backgroundColor: 'rgba(255,255,255,0.5)' }}>
-             {/* 🔥 PUSHED DOWN TIMELINE (mt-16) to start below header */}
-             <div className="mt-16 w-full flex flex-col items-center">
-                {timelineDays.map(day => {
-                const isEven = parseInt(day) % 2 === 0;
-                return (
-                    <button 
-                        key={day} 
-                        onClick={() => document.getElementById(`day-${day}`)?.scrollIntoView({ behavior: 'smooth' })} 
-                        className="w-8 h-8 rounded-full text-[10px] font-bold flex items-center justify-center shrink-0 transition-all hover:scale-110 mb-2 border border-orange-200" 
-                        // 🔥 ALTERNATING LIGHT COLORS
-                        style={{ backgroundColor: isEven ? '#fff7ed' : '#ffedd5', color: '#c2410c' }}
-                    >D{day}</button>
-                )
-                })}
-             </div>
+             {timelineDays.map(day => {
+               const isEven = parseInt(day) % 2 === 0;
+               return (
+                <button 
+                    key={day} 
+                    onClick={() => document.getElementById(`day-${day}`)?.scrollIntoView({ behavior: 'smooth' })} 
+                    className="w-8 h-8 rounded-full text-[10px] font-bold flex items-center justify-center shrink-0 transition-all hover:scale-110 mb-2 border border-orange-200" 
+                    // 🔥 ALTERNATING LIGHT COLORS
+                    style={{ backgroundColor: isEven ? '#fff7ed' : '#ffedd5', color: '#c2410c' }}
+                >D{day}</button>
+               )
+             })}
            </div>
         )}
 
@@ -684,15 +666,15 @@ export default function App() {
                 return (
                   <div key={day} id={`day-${day}`} className="py-8 scroll-mt-20 border-b-2 border-dashed border-stone-300/50">
                     <div className="px-4 mb-6">
-                      {/* 🔥 BIGGER DAY HEADER - Full Width & Left Aligned (Negative Margin Hack) */}
-                      <div className="-ml-12 flex items-baseline gap-3 mb-2 pl-4">
+                      {/* 🔥 BIGGER DAY HEADER */}
+                      <div className="flex items-baseline gap-3 mb-2">
                         <h3 className="text-4xl font-black text-stone-800 tracking-tighter">Day {day}</h3>
                         <span className="text-stone-500 font-bold text-sm tracking-widest">{items[0].Date}</span>
                       </div>
-                      <h4 className="text-xl font-bold leading-tight -ml-12 pl-5" style={{ color: THEME.darkOlive }}>{daySummary.Highlight || `Adventure Day ${day}`}</h4>
+                      <h4 className="text-xl font-bold leading-tight" style={{ color: THEME.darkOlive }}>{daySummary.Highlight || `Adventure Day ${day}`}</h4>
                     </div>
-                    {/* Keep content indented */}
-                    <div className="space-y-4 px-4"> 
+                    {/* Added pl-16 to avoid timeline overlap */}
+                    <div className="space-y-4 px-4 pl-16"> 
                       {items.map((item, idx) => {
                         const catColor = getCategoryColor(item.Category);
                         const currentHour = new Date().getHours();
@@ -714,11 +696,10 @@ export default function App() {
                           <div className="pl-6 p-4">
                               <div className="flex justify-between items-start mb-2">
                                   <div className="flex items-center gap-3">
-                                      {/* 🔥 OPTION A: CAPSULE TIME BADGE */}
                                       {item.Time && (
-                                          <span className="px-2 py-0.5 rounded-full text-xs font-bold font-mono text-white tracking-tight" style={{ backgroundColor: THEME.darkOlive }}>
-                                              {item.Time.replace(/:00$/, '')}
-                                          </span>
+                                          <div className="flex flex-col">
+                                              <span className="text-xl font-black font-mono tracking-tight" style={{ color: THEME.darkOlive }}>{item.Time.replace(/:00$/, '')}</span>
+                                          </div>
                                       )}
                                       <div className="p-1.5 rounded-full bg-stone-100">
                                           {getCategoryIcon(item.Category, item.Title, catColor, 20)}
